@@ -47,12 +47,15 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // Pets - public reads, admin writes
+                        // Pets - public reads, any user can create/update, only admin can delete
                         .requestMatchers(HttpMethod.GET, "/api/pets/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/pets/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/pets/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/api/pets/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/pets/**").hasAnyRole("ADMIN","USER")
+                        .requestMatchers(HttpMethod.PUT, "/api/pets/**").hasAnyRole("ADMIN","USER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/pets/**").hasAnyRole("ADMIN","USER")
                         .requestMatchers(HttpMethod.DELETE, "/api/pets/**").hasRole("ADMIN")
+
+                        // Admin panel - user management, fraud pet deletion
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                         // Adoptions
                         .requestMatchers(HttpMethod.GET, "/api/adoptions/my").hasAnyRole("USER", "ADMIN")
