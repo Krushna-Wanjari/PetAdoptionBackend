@@ -33,4 +33,26 @@ public class PetRequest {
     private String description;
 
     private String imageUrl;
+
+    @Size(max = 100, message = "City must be under 100 characters")
+    private String city;
+
+    @Size(max = 50, message = "Weight must be under 50 characters")
+    private String weight;
+
+    @Size(max = 50, message = "Color must be under 50 characters")
+    private String color;
+
+    private Boolean vaccinated;
+
+    private Boolean sterilized;
+
+    @Size(max = 2000, message = "Reason must be under 2000 characters")
+    private String reasonForRehoming;
+
+    @Size(max = 100, message = "Owner name must be under 100 characters")
+    private String ownerName;
+
+    @Size(max = 30, message = "Owner phone must be under 30 characters")
+    private String ownerPhone;
 }

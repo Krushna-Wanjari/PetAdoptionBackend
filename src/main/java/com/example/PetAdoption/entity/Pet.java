@@ -65,6 +65,44 @@ public class Pet {
     @Column(name = "image_url", length = 500)
     private String imageUrl;
 
+    // ---------- Listing details captured by the "List a Pet" form ----------
+
+    @Size(max = 100, message = "City must be under 100 characters")
+    @Column(name = "city")
+    private String city;
+
+    @Size(max = 50, message = "Weight must be under 50 characters")
+    @Column(name = "weight")
+    private String weight;
+
+    @Size(max = 50, message = "Color must be under 50 characters")
+    @Column(name = "color")
+    private String color;
+
+    // Boxed rather than primitive: these columns were added after the table
+    // already held rows, so MySQL backfills them as NULL and a primitive
+    // boolean would blow up with "Null value was assigned to a property of
+    // primitive type" the moment an existing pet is read.
+    @Column(name = "vaccinated", columnDefinition = "boolean default false")
+    private Boolean vaccinated = Boolean.FALSE;
+
+    @Column(name = "sterilized", columnDefinition = "boolean default false")
+    private Boolean sterilized = Boolean.FALSE;
+
+    @Size(max = 2000, message = "Reason must be under 2000 characters")
+    @Column(name = "reason_for_rehoming", length = 2000)
+    private String reasonForRehoming;
+
+    // ---------- Owner contact, shown on the pet detail page ----------
+
+    @Size(max = 100, message = "Owner name must be under 100 characters")
+    @Column(name = "owner_name")
+    private String ownerName;
+
+    @Size(max = 30, message = "Owner phone must be under 30 characters")
+    @Column(name = "owner_phone")
+    private String ownerPhone;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -78,6 +116,12 @@ public class Pet {
     @OneToMany(mappedBy = "pet", fetch = FetchType.LAZY)
     @ToString.Exclude
     private List<AdoptionRequest> adoptionRequests = new ArrayList<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by")
+    @JsonIgnore
+    @ToString.Exclude
+    private User createdBy;
 
     public Pet(String name, String species, String breed, int age, Gender gender, PetStatus status, String description, String imageUrl) {
         this.name = name;

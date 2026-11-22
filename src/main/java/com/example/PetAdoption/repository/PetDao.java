@@ -12,4 +12,6 @@ public interface PetDao {
     void deleteById(long id);
     List<Pet> findByStatus(Pet.PetStatus status);
     List<Pet> findBySpecies(String species);
+    List<Pet> search(String query);
+    List<Pet> findByCreatorId(long userId);
 }

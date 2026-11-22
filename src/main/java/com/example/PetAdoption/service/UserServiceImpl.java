@@ -4,6 +4,7 @@ import com.example.PetAdoption.dto.RegisterRequest;
 import com.example.PetAdoption.entity.User;
 import com.example.PetAdoption.exception.DuplicateResourceException;
 import com.example.PetAdoption.exception.ResourceNotFoundException;
+import com.example.PetAdoption.repository.AdoptionRequestDao;
 import com.example.PetAdoption.repository.UserDao;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,11 +18,18 @@ public class UserServiceImpl implements UserService {
 
     private final UserDao userDao;
     private final PasswordEncoder passwordEncoder;
+    private final AdoptionRequestDao adoptionRequestDao;
+    private final AdoptionService adoptionService;
 
     @Autowired
-    public UserServiceImpl(UserDao userDao, PasswordEncoder passwordEncoder) {
+    public UserServiceImpl(UserDao userDao,
+                           PasswordEncoder passwordEncoder,
+                           AdoptionRequestDao adoptionRequestDao,
+                           AdoptionService adoptionService) {
         this.userDao = userDao;
         this.passwordEncoder = passwordEncoder;
+        this.adoptionRequestDao = adoptionRequestDao;
+        this.adoptionService = adoptionService;
     }
 
     @Override
@@ -62,8 +70,29 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void deleteUser(Long id) {
-        getUserById(id); // throws if missing
+        User user = getUserById(id);
+
+        if (user.getRole() == User.Role.ADMIN && countAdmins() <= 1) {
+            throw new IllegalArgumentException("The last remaining admin account cannot be deleted");
+        }
+
+        // Remember which pets this user had requested: deleting their requests
+        // below can leave those pets stranded in PENDING with nothing left to
+        // approve or reject.
+        List<Long> affectedPetIds = adoptionRequestDao.findPetIdsByUserId(user.getUserId());
+
+        // adoption_requests.user_id is a foreign key, so clear the history first.
+        adoptionRequestDao.deleteByUserId(user.getUserId());
+
         userDao.delete(id);
+
+        adoptionService.recalculatePetStatuses(affectedPetIds);
+    }
+
+    private long countAdmins() {
+        return userDao.findAll().stream()
+                .filter(u -> u.getRole() == User.Role.ADMIN)
+                .count();
     }
 
     @Override

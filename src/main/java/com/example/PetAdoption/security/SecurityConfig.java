@@ -8,6 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -18,6 +19,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
+// Required for @PreAuthorize on the controllers to be enforced at all.
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtUtil jwtUtil;
@@ -47,12 +50,22 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // Pets - public reads, any user can create/update, only admin can delete
+                        // Pets - reads are public; any signed-in user may list a pet, owners can
+                        // edit/delete their own pets and manage images, admins can do all.
+                        // Image gallery management is available to owners as well so
+                        // the self-serve Donate flow can upload and tidy photos.
                         .requestMatchers(HttpMethod.GET, "/api/pets/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/pets/**").hasAnyRole("ADMIN","USER")
-                        .requestMatchers(HttpMethod.PUT, "/api/pets/**").hasAnyRole("ADMIN","USER")
-                        .requestMatchers(HttpMethod.PATCH, "/api/pets/**").hasAnyRole("ADMIN","USER")
-                        .requestMatchers(HttpMethod.DELETE, "/api/pets/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/pets").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/pets/mine").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/pets/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/pets/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/pets/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/pets/*/image").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/pets/*/images").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/pets/*/images/**").hasAnyRole("USER", "ADMIN")
+
+                        // Current user profile
+                        .requestMatchers(HttpMethod.GET, "/api/users/me").hasAnyRole("USER", "ADMIN")
 
                         // Admin panel - user management, fraud pet deletion
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
