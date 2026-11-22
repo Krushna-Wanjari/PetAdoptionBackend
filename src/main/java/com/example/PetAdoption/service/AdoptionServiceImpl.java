@@ -60,6 +60,7 @@ public class AdoptionServiceImpl implements AdoptionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<AdoptionRequest> getMyRequests(String requesterEmail) {
         User user = userDao.findByEmail(requesterEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + requesterEmail));
@@ -67,6 +68,7 @@ public class AdoptionServiceImpl implements AdoptionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<AdoptionRequest> getAllRequests() {
         return adoptionRequestDao.findAll();
     }
